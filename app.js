@@ -52,13 +52,23 @@ let runStream = () => {
             console.log(tweet);
             // Save 'er to the database
             if ((tweet.loc_lat && tweet.loc_lon) || tweet.loc_name) {
-                //
+                snsSubscribe(tweet);
             }
-        });        
+        });
     });
 };
 runStream();
 
+let aws = require('aws-sdk');
+let sns = new aws.SNS();
+let snsSubscribe = (tweet) => {
+    let publishParams = {
+        TopicArn : config.TopicArn,
+        Message: tweet
+    };
+
+    sns.publish(publishParams, (err, data) => {});
+}
 
 app.listen(port, () => {
     console.log('App is listening on port ',port);

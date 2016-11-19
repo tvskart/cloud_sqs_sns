@@ -9,5 +9,6 @@ module.exports = {
         location : {'locations': '-122.75,36.8,-121.75,37.8,-74,40,-73,41'},
         words: {'track': 'trump, hillary'},
         empty: {}
-    }    
+    },
+    TopicArn: "arn:aws:sns:us-east-1:892410376055:geo_tweets"
 };
