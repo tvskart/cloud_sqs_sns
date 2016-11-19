@@ -67,7 +67,7 @@ let snsSubscribe = (tweet) => {
         Message: tweet
     };
 
-    sns.publish(publishParams, (err, data) => {});
+    // sns.publish(publishParams, (err, data) => {});
 }
 
 app.listen(port, () => {
