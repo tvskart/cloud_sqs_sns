@@ -10,5 +10,6 @@ module.exports = {
         words: {'track': 'trump, hillary'},
         empty: {}
     },
-    TopicArn: "arn:aws:sns:us-east-1:892410376055:geo_tweets"
+    TopicArn: "arn:aws:sns:us-east-1:892410376055:geo_tweets",
+    QueueArn: ""
 };
