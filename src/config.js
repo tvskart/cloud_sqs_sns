@@ -11,5 +11,5 @@ module.exports = {
         empty: {}
     },
     TopicArn: "arn:aws:sns:us-east-1:892410376055:geo_tweets",
-    QueueArn: ""
+    QueueUrl: "	https://sqs.us-east-1.amazonaws.com/892410376055/geo_tweets_queue"
 };

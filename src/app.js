@@ -5,8 +5,8 @@ let Twitter = require('twitter');
 let config = require('./config');
 
 let app = express();
-
 const port = 8080;
+app.set('port', process.env.PORT || port);
 app.set('view engine', 'hbs');
 // app.set('views', path.join(__dirname, 'views'));
 app.use(bodyParser.urlencoded({extended: false}));
@@ -57,7 +57,7 @@ let runStream = () => {
         });
     });
 };
-runStream();
+// runStream();
 
 let aws = require('aws-sdk');
 let sns = new aws.SNS();
@@ -69,7 +69,33 @@ let snsSubscribe = (tweet) => {
 
     // sns.publish(publishParams, (err, data) => {});
 }
+let sqs = new aws.SQS();
+function getMessages() {
+    let receiveMessageParams = {
+        QueueUrl: config.QueueUrl,
+        MaxNumberOfMessages: 10
+    };    
+    sqs.receiveMessage(receiveMessageParams, (err, data) => {
+        if (data && data.Messages && data.Messages.length > 0) {
+            for (var i=0; i < data.Messages.length; i++) {
+                //TODO: third party api on msg
 
-app.listen(port, () => {
-    console.log('App is listening on port ',port);
+                var deleteMessageParams = {
+                    QueueUrl: config.QueueUrl,
+                    ReceiptHandle: data.Messages[i].ReceiptHandle
+                };
+
+                sqs.deleteMessage(deleteMessageParams, (err, data) => {});
+            }
+
+            getMessages();
+        } else {
+            setTimeout(getMessages(), 60);
+        }
+    });
+}
+
+// setTimeout(getMessages(), 60);
+let server = app.listen(app.get('port'), () => {
+    console.log('App is listening on port ', server.address().port);
 })
