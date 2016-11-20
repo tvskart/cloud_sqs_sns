@@ -17,24 +17,24 @@ let runStream = () => {
     twit.stream('statuses/filter', config.stream.words, function(s) {
         stream = s;
         stream.on('limit', function(limitMessage) {
-            return console.log(limitMessage);
+            return console.log('stream limit - ', limitMessage);
         });
         stream.on('end', (response) => {
-            setTimeout(runStream, 600);
+            // setTimeout(runStream, 600);
         });
         stream.on('error', function(error) {
-            console.log(error);
+            console.log('stream err - ', error);
             stream.destroy();
-            setTimeout(runStream, 600);
+            // setTimeout(runStream, 600);
         });
         stream.on('destroy', (response) => {
             console.log('silently destroyed connection');
         });
         stream.on('warning', function(warning) {
-            return console.log(warning);
+            return console.log('stream warning - ', warning);
         });
         stream.on('disconnect', function(disconnectMessage) {
-            return console.log(disconnectMessage);
+            return console.log('stream disconnected - ', disconnectMessage);
         });
         stream.on('data',(data) => {
             //tweet obj
@@ -66,7 +66,8 @@ let sns = new aws.SNS();
 let snsSubscribe = (tweet) => {
     let publishParams = {
         TopicArn : config.TopicArn,
-        Message: tweet.body,
+        Message: tweet,
+        MessageStructure: 'json',
         MessageAttributes: {
             author: {
                 DataType: 'STRING_VALUE'
@@ -87,6 +88,15 @@ let snsSubscribe = (tweet) => {
                 DataType: 'STRING_VALUE'
             },
             retweets: {
+                DataType: 'STRING_VALUE'
+            },
+            loc_name: {
+                DataType: 'STRING_VALUE'
+            },
+            loc_lat: {
+                DataType: 'STRING_VALUE'
+            },
+            loc_lon: {
                 DataType: 'STRING_VALUE'
             }
         }
