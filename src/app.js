@@ -50,7 +50,7 @@ let runStream = () => {
                 loc_lat: _.get(data,'coordinates.coordinates[1]') || _.get(data,'geo.coordinates[0]'),
                 loc_lon: _.get(data,'coordinates.coordinates[0]')|| _.get(data,'geo.coordinates[1]')
             };
-            console.log(tweet);
+            console.log(JSON.stringify(tweet));
             if ((tweet.loc_lat && tweet.loc_lon) || tweet.loc_name || true) {
                 snsSubscribe(tweet);
             }
@@ -66,40 +66,40 @@ let sns = new aws.SNS();
 let snsSubscribe = (tweet) => {
     let publishParams = {
         TopicArn : config.TopicArn,
-        Message: tweet,
-        MessageStructure: 'json',
-        MessageAttributes: {
-            author: {
-                DataType: 'STRING_VALUE'
-            },
-            avatar: {
-                DataType: 'STRING_VALUE'
-            },
-            body: {
-                DataType: 'STRING_VALUE'
-            },
-            date: {
-                DataType: 'STRING_VALUE'
-            },
-            screenname: {
-                DataType: 'STRING_VALUE'
-            },
-            favs: {
-                DataType: 'STRING_VALUE'
-            },
-            retweets: {
-                DataType: 'STRING_VALUE'
-            },
-            loc_name: {
-                DataType: 'STRING_VALUE'
-            },
-            loc_lat: {
-                DataType: 'STRING_VALUE'
-            },
-            loc_lon: {
-                DataType: 'STRING_VALUE'
-            }
-        }
+        Message: JSON.stringify(tweet)
+        // MessageStructure: 'json',
+        // MessageAttributes: {
+        //     author: {
+        //         DataType: 'STRING_VALUE'
+        //     },
+        //     avatar: {
+        //         DataType: 'STRING_VALUE'
+        //     },
+        //     body: {
+        //         DataType: 'STRING_VALUE'
+        //     },
+        //     date: {
+        //         DataType: 'STRING_VALUE'
+        //     },
+        //     screenname: {
+        //         DataType: 'STRING_VALUE'
+        //     },
+        //     favs: {
+        //         DataType: 'STRING_VALUE'
+        //     },
+        //     retweets: {
+        //         DataType: 'STRING_VALUE'
+        //     },
+        //     loc_name: {
+        //         DataType: 'STRING_VALUE'
+        //     },
+        //     loc_lat: {
+        //         DataType: 'STRING_VALUE'
+        //     },
+        //     loc_lon: {
+        //         DataType: 'STRING_VALUE'
+        //     }
+        // }
     };
 
     sns.publish(publishParams, (err, data) => {
