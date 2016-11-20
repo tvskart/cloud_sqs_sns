@@ -51,7 +51,7 @@ let runStream = () => {
                 loc_lon: _.get(data,'coordinates.coordinates[0]')|| _.get(data,'geo.coordinates[1]')
             };
             console.log(JSON.stringify(tweet));
-            if ((tweet.loc_lat && tweet.loc_lon) || tweet.loc_name || true) {
+            if ((tweet.loc_lat && tweet.loc_lon) || tweet.loc_name) {
                 snsSubscribe(tweet);
             }
         });
@@ -67,39 +67,6 @@ let snsSubscribe = (tweet) => {
     let publishParams = {
         TopicArn : config.TopicArn,
         Message: JSON.stringify(tweet)
-        // MessageStructure: 'json',
-        // MessageAttributes: {
-        //     author: {
-        //         DataType: 'STRING_VALUE'
-        //     },
-        //     avatar: {
-        //         DataType: 'STRING_VALUE'
-        //     },
-        //     body: {
-        //         DataType: 'STRING_VALUE'
-        //     },
-        //     date: {
-        //         DataType: 'STRING_VALUE'
-        //     },
-        //     screenname: {
-        //         DataType: 'STRING_VALUE'
-        //     },
-        //     favs: {
-        //         DataType: 'STRING_VALUE'
-        //     },
-        //     retweets: {
-        //         DataType: 'STRING_VALUE'
-        //     },
-        //     loc_name: {
-        //         DataType: 'STRING_VALUE'
-        //     },
-        //     loc_lat: {
-        //         DataType: 'STRING_VALUE'
-        //     },
-        //     loc_lon: {
-        //         DataType: 'STRING_VALUE'
-        //     }
-        // }
     };
 
     sns.publish(publishParams, (err, data) => {
@@ -114,16 +81,17 @@ function getMessages() {
     let receiveMessageParams = {
         QueueUrl: config.QueueUrl,
         MaxNumberOfMessages: 10
-    };    
+    };
     sqs.receiveMessage(receiveMessageParams, (err, data) => {
         if (data && data.Messages && data.Messages.length > 0) {
             for (var i=0; i < data.Messages.length; i++) {
                 //TODO: third party api on msg
-                let sentiment = ml.classifiers.classify(config.ml_module_id, [data.Messages[i].text], true);
-                sentiment.then((res) => {
-                    console.log(res.result[0][0].label);
-                    //SNS to another queue
-                });
+                console.log(data.Messages[i]);
+                // let sentiment = ml.classifiers.classify(config.ml_module_id, [data.Messages[i].text], true);
+                // sentiment.then((res) => {
+                //     console.log(res.result[0][0].label);
+                //     //SNS to another queue
+                // });
                 var deleteMessageParams = {
                     QueueUrl: config.QueueUrl,
                     ReceiptHandle: data.Messages[i].ReceiptHandle
@@ -134,13 +102,12 @@ function getMessages() {
 
             getMessages();
         } else {
-            setTimeout(getMessages, 60);
+            setTimeout(getMessages, 15);
         }
     });
 }
 
 //TODO: SQS for sentiment queue
-
 // setTimeout(getMessages, 5);
 let server = app.listen(app.get('port'), () => {
     console.log('App is listening on port ', server.address().port);

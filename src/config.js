@@ -7,7 +7,9 @@ module.exports = {
     },
     stream: {
         location : {'locations': '-122.75,36.8,-121.75,37.8,-74,40,-73,41'},
-        words: {'track': '@PointlessBlog, @pewdiepie, @Jenna_Marbles, @Caspar_Lee, @PhillyD, @tyleroakley'},
+        words: {
+            'track': '@PointlessBlog, @pewdiepie, @Jenna_Marbles, @Caspar_Lee, @PhillyD, @tyleroakley, @fouseyTUBE, @omgAdamSaleh, @screenjunkies, @RiceGum, @LeafyIsHere, @RomanAtwood, @IISuperwomanII, @realDonaldTrump, gay marriage, @Pokemon'
+        },
         empty: {}
     },
     TopicArn: "arn:aws:sns:us-east-1:892410376055:geo_tweets",
