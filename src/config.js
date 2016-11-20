@@ -7,9 +7,14 @@ module.exports = {
     },
     stream: {
         location : {'locations': '-122.75,36.8,-121.75,37.8,-74,40,-73,41'},
-        words: {'track': 'trump, hillary'},
+        words: {'track': '@PointlessBlog, @pewdiepie, @Jenna_Marbles, @Caspar_Lee, @PhillyD, @tyleroakley'},
         empty: {}
     },
     TopicArn: "arn:aws:sns:us-east-1:892410376055:geo_tweets",
-    QueueUrl: "	https://sqs.us-east-1.amazonaws.com/892410376055/geo_tweets_queue"
+    QueueUrl: "https://sqs.us-east-1.amazonaws.com/892410376055/geo_tweets_queue",
+    monkey_learn_key: "0f0a835d95c22c050a859454e4a8ce0f1aef6b3b",
+    ml_module_id: "cl_qkjxv9Ly",
+    aws: {
+        'region': 'us-east-1'
+    }
 };

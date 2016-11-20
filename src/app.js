@@ -3,6 +3,7 @@ let bodyParser = require('body-parser');
 let path = require('path');
 let Twitter = require('twitter');
 let config = require('./config');
+let _ = require('lodash');
 
 let app = express();
 const port = 8080;
@@ -50,26 +51,55 @@ let runStream = () => {
                 loc_lon: _.get(data,'coordinates.coordinates[0]')|| _.get(data,'geo.coordinates[1]')
             };
             console.log(tweet);
-            // Save 'er to the database
-            if ((tweet.loc_lat && tweet.loc_lon) || tweet.loc_name) {
+            if ((tweet.loc_lat && tweet.loc_lon) || tweet.loc_name || true) {
                 snsSubscribe(tweet);
             }
         });
     });
 };
-// runStream();
-
+app.get('/start', (req, res) => {
+    runStream();
+});
 let aws = require('aws-sdk');
+aws.config.update(config.aws);
 let sns = new aws.SNS();
 let snsSubscribe = (tweet) => {
     let publishParams = {
         TopicArn : config.TopicArn,
-        Message: tweet
+        Message: tweet.body,
+        MessageAttributes: {
+            author: {
+                DataType: 'STRING_VALUE'
+            },
+            avatar: {
+                DataType: 'STRING_VALUE'
+            },
+            body: {
+                DataType: 'STRING_VALUE'
+            },
+            date: {
+                DataType: 'STRING_VALUE'
+            },
+            screenname: {
+                DataType: 'STRING_VALUE'
+            },
+            favs: {
+                DataType: 'STRING_VALUE'
+            },
+            retweets: {
+                DataType: 'STRING_VALUE'
+            }
+        }
     };
 
-    // sns.publish(publishParams, (err, data) => {});
+    sns.publish(publishParams, (err, data) => {
+        console.log(err, data);
+    });
 }
 let sqs = new aws.SQS();
+let MonkeyLearn = require('monkeylearn');
+let ml = new MonkeyLearn(config.monkey_learn_key);
+
 function getMessages() {
     let receiveMessageParams = {
         QueueUrl: config.QueueUrl,
@@ -79,7 +109,11 @@ function getMessages() {
         if (data && data.Messages && data.Messages.length > 0) {
             for (var i=0; i < data.Messages.length; i++) {
                 //TODO: third party api on msg
-
+                let sentiment = ml.classifiers.classify(config.ml_module_id, [data.Messages[i].text], true);
+                sentiment.then((res) => {
+                    console.log(res.result[0][0].label);
+                    //SNS to another queue
+                });
                 var deleteMessageParams = {
                     QueueUrl: config.QueueUrl,
                     ReceiptHandle: data.Messages[i].ReceiptHandle
@@ -90,12 +124,14 @@ function getMessages() {
 
             getMessages();
         } else {
-            setTimeout(getMessages(), 60);
+            setTimeout(getMessages, 60);
         }
     });
 }
 
-// setTimeout(getMessages(), 60);
+//TODO: SQS for sentiment queue
+
+// setTimeout(getMessages, 5);
 let server = app.listen(app.get('port'), () => {
     console.log('App is listening on port ', server.address().port);
 })
