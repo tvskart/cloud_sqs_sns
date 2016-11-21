@@ -51,7 +51,7 @@ let runStream = () => {
                 loc_lat: _.get(data,'coordinates.coordinates[1]') || _.get(data,'geo.coordinates[0]'),
                 loc_lon: _.get(data,'coordinates.coordinates[0]')|| _.get(data,'geo.coordinates[1]')
             };
-            if ((tweet.loc_lat && tweet.loc_lon) || tweet.loc_name) {
+            if ((tweet.loc_lat && tweet.loc_lon)) {
                 snsSubscribe(tweet);
             }
         });
@@ -71,9 +71,9 @@ let snsSubscribe = (tweet) => {
         Message: JSON.stringify(tweet)
     };
 
-    // sns.publish(publishParams, (err, data) => {
-    //     console.log(err, data);
-    // });
+    sns.publish(publishParams, (err, data) => {
+        console.log(err, data);
+    });
     io.emit('new_tweet', tweet);
 }
 let sqs = new aws.SQS();
