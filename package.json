@@ -17,6 +17,8 @@
     "lodash": "^4.17.2",
     "monkeylearn": "^0.1.10",
     "node-uuid": "^1.4.7",
+    "path": "^0.12.7",
+    "socket.io": "^1.6.0",
     "twitter": "^1.4.0"
   }
 }

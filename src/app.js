@@ -9,7 +9,7 @@ let app = express();
 const port = 8080;
 app.set('port', process.env.PORT || port);
 app.set('view engine', 'hbs');
-// app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(__dirname, '../views'))
 app.use(bodyParser.urlencoded({extended: false}));
 let twit = new Twitter(config.twitter);
 let runStream = () => {
@@ -38,6 +38,7 @@ let runStream = () => {
         });
         stream.on('data',(data) => {
             //tweet obj
+            console.log(data);
             let tweet = {
                 author: _.get(data, 'user.name'),
                 avatar: _.get(data,'user.profile_image_url'),
@@ -50,15 +51,16 @@ let runStream = () => {
                 loc_lat: _.get(data,'coordinates.coordinates[1]') || _.get(data,'geo.coordinates[0]'),
                 loc_lon: _.get(data,'coordinates.coordinates[0]')|| _.get(data,'geo.coordinates[1]')
             };
-            console.log(JSON.stringify(tweet));
             if ((tweet.loc_lat && tweet.loc_lon) || tweet.loc_name) {
                 snsSubscribe(tweet);
             }
         });
     });
 };
+
 app.get('/start', (req, res) => {
     runStream();
+    res.render('index', {});
 });
 let aws = require('aws-sdk');
 aws.config.update(config.aws);
@@ -69,9 +71,10 @@ let snsSubscribe = (tweet) => {
         Message: JSON.stringify(tweet)
     };
 
-    sns.publish(publishParams, (err, data) => {
-        console.log(err, data);
-    });
+    // sns.publish(publishParams, (err, data) => {
+    //     console.log(err, data);
+    // });
+    io.emit('new_tweet', tweet);
 }
 let sqs = new aws.SQS();
 let MonkeyLearn = require('monkeylearn');
@@ -107,8 +110,11 @@ function getMessages() {
     });
 }
 
-//TODO: SQS for sentiment queue
 // setTimeout(getMessages, 5);
 let server = app.listen(app.get('port'), () => {
     console.log('App is listening on port ', server.address().port);
 })
+const io = require('socket.io').listen(server);
+io.on('connection', (socket) => {
+    socket.emit('server connected');
+});

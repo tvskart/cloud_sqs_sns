@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<head>
+    <title></title>
+    <script src="../socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <h1>Twitter Cloud #2</h1>
+    {{{body}}}
+    <script type="text/javascript">
+        console.log('client side start');
+        function initialize() {
+            if(io !== undefined) {
+                // Storage for WebSocket connections
+                var socket = io.connect('/');
+
+                // This listens on the "tweet" channel and data is 
+                // received everytime a new tweet is receieved.
+                socket.on('new_tweet', function (data) {
+                    console.log('client side tweet', data);
+                });
+
+                // Listens for a success response from the server to 
+                // say the connection was successful.
+                socket.on("server connected", function(r) {
+                    //Now that we are connected to the server let's tell 
+                    //the server we are ready to start receiving tweets.
+                    console.log('client server connection made');
+                });
+            }
+        }
+        initialize();
+    </script>    
+  </body>
+</html>
