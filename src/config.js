@@ -12,7 +12,8 @@ module.exports = {
         },
         empty: {}
     },
-    TopicArn: "arn:aws:sns:us-east-1:892410376055:geo_tweets",
+    TopicArnGeo: "arn:aws:sns:us-east-1:892410376055:geo_tweets",
+    TopicArnSentiment: "arn:aws:sns:us-east-1:892410376055:sentiment_tweets",
     QueueUrl: "https://sqs.us-east-1.amazonaws.com/892410376055/geo_tweets_queue",
     monkey_learn_key: "0f0a835d95c22c050a859454e4a8ce0f1aef6b3b",
     ml_module_id: "cl_qkjxv9Ly",

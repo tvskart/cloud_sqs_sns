@@ -4,6 +4,7 @@ let path = require('path');
 let Twitter = require('twitter');
 let config = require('./config');
 let _ = require('lodash');
+// let async = require('async'); TODO: USE IT, LEARN IT!
 
 let app = express();
 const port = 8080;
@@ -52,7 +53,7 @@ let runStream = () => {
                 loc_lon: _.get(data,'coordinates.coordinates[0]')|| _.get(data,'geo.coordinates[1]')
             };
             if ((tweet.loc_lat && tweet.loc_lon)) {
-                snsSubscribe(tweet);
+                snsSubscribeNewTweet(tweet);
             }
         });
     });
@@ -65,9 +66,9 @@ app.get('/start', (req, res) => {
 let aws = require('aws-sdk');
 aws.config.update(config.aws);
 let sns = new aws.SNS();
-let snsSubscribe = (tweet) => {
+let snsSubscribeNewTweet = (tweet) => {
     let publishParams = {
-        TopicArn : config.TopicArn,
+        TopicArn : config.TopicArnGeo,
         Message: JSON.stringify(tweet)
     };
 
@@ -76,6 +77,15 @@ let snsSubscribe = (tweet) => {
     });
     io.emit('new_tweet', tweet);
 }
+let snsSubscribeSentimentTweet = (tweet) => {
+    console.log(tweet);
+    let publishParams = {
+        TopicArn : config.TopicArnSentiment,
+        Message: JSON.stringify(tweet)
+    };
+
+    sns.publish(publishParams, (err, data) => {});
+}
 let sqs = new aws.SQS();
 let MonkeyLearn = require('monkeylearn');
 let ml = new MonkeyLearn(config.monkey_learn_key);
@@ -83,18 +93,33 @@ let ml = new MonkeyLearn(config.monkey_learn_key);
 function getMessages() {
     let receiveMessageParams = {
         QueueUrl: config.QueueUrl,
-        MaxNumberOfMessages: 10
+        MaxNumberOfMessages: 5
     };
     sqs.receiveMessage(receiveMessageParams, (err, data) => {
+        console.log('getmessages repeat');
         if (data && data.Messages && data.Messages.length > 0) {
+            var tweets = data.Messages.map((msg) => {
+                var tweet = JSON.parse(_.get(msg, 'Body'));
+                tweet = _.get(tweet, 'Message');
+                return JSON.parse(tweet);
+            });
+            //TODO: IMportant. fix async issue i.e. loop through tweets async calls ------
+
+            calcSentiment(tweets).then((sentiments) => {
+                //SNS
+                sentiment_tweets = _.zipWith(tweets, sentiments, function(t, s) {
+                    return _.merge(t, {'sentiment': s});
+                });
+                sentiment_tweets.forEach((st) => {
+                    snsSubscribeSentimentTweet(st);
+                });
+                getMessages(); //repeat
+            });
+
             for (var i=0; i < data.Messages.length; i++) {
-                //TODO: third party api on msg
-                console.log(data.Messages[i]);
-                // let sentiment = ml.classifiers.classify(config.ml_module_id, [data.Messages[i].text], true);
-                // sentiment.then((res) => {
-                //     console.log(res.result[0][0].label);
-                //     //SNS to another queue
-                // });
+                var tweet = JSON.parse(_.get(data, 'Messages['+i+'].Body'));
+                tweet = _.get(tweet, 'Message');
+
                 var deleteMessageParams = {
                     QueueUrl: config.QueueUrl,
                     ReceiptHandle: data.Messages[i].ReceiptHandle
@@ -102,15 +127,34 @@ function getMessages() {
 
                 sqs.deleteMessage(deleteMessageParams, (err, data) => {});
             }
-
-            getMessages();
         } else {
             setTimeout(getMessages, 15);
         }
     });
 }
 
-// setTimeout(getMessages, 5);
+function upload2ES() {
+    //TODO: ES bulk upload
+}
+
+//pass the tweet texts as an array
+let calcSentiment = (tweets) => {
+    return new Promise((resolve, reject) => {
+        let tweet_texts = tweets.map((t) => {
+            return _.get(t, 'body');
+        });
+        let sentiment = ml.classifiers.classify(config.ml_module_id, tweet_texts, true);
+        sentiment.then((res) => {
+            var results = res.result.map((r) => {
+                return (_.get(r, '[0].label'));
+            });
+            resolve(results);
+        });
+    });
+}
+
+setTimeout(getMessages, 5);
+setTimeout(upload2ES, 28);
 let server = app.listen(app.get('port'), () => {
     console.log('App is listening on port ', server.address().port);
 })
