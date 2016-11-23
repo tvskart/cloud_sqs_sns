@@ -52,6 +52,7 @@ let runStream = () => {
                 loc_lat: _.get(data,'coordinates.coordinates[1]') || _.get(data,'geo.coordinates[0]'),
                 loc_lon: _.get(data,'coordinates.coordinates[0]')|| _.get(data,'geo.coordinates[1]')
             };
+            io.emit('raw_tweet', tweet);
             if ((tweet.loc_lat && tweet.loc_lon)) {
                 snsSubscribeNewTweet(tweet);
             }
