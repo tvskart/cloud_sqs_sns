@@ -22,5 +22,8 @@
     "path": "^0.12.7",
     "socket.io": "^1.6.0",
     "twitter": "^1.4.0"
+  },
+  "devDependencies": {
+    "fs": "0.0.1-security"
   }
 }
