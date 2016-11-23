@@ -20,5 +20,10 @@ module.exports = {
     ml_module_id: "cl_qkjxv9Ly",
     aws: {
         'region': 'us-east-1'
+    },
+    es: {
+        host: 'search-sentiment-tweets-3xvjjshaedu3dibpwgvp75nuzu.us-east-1.es.amazonaws.com',
+        index: 'sentiment_tweets',
+        doc_type: 'tweet'
     }
 };

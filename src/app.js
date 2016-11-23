@@ -91,6 +91,22 @@ let sqs = new aws.SQS();
 let MonkeyLearn = require('monkeylearn');
 let ml = new MonkeyLearn(config.monkey_learn_key);
 
+let elasticsearch = require('elasticsearch');
+const elastic_client = new elasticsearch.Client({
+    hosts: [
+        {
+            protocol: 'https',
+            host: config.es.host,
+            port: 443
+        }
+        // ,
+        // {
+        //     host: 'localhost',
+        //     port: 9200
+        // }
+    ]
+});
+
 function getMessages() {
     let receiveMessageParams = {
         QueueUrl: config.QueueUrlGeo,
@@ -148,7 +164,6 @@ function upload2ES() {
                 return JSON.parse(tweet);
             });
 
-            //ES bulk upload
             for (var i=0; i < data.Messages.length; i++) {
                 var tweet = JSON.parse(_.get(data, 'Messages['+i+'].Body'));
                 tweet = _.get(tweet, 'Message');
@@ -160,8 +175,40 @@ function upload2ES() {
 
                 sqs.deleteMessage(deleteMessageParams, (err, data) => {});
             }
+
+            //ES bulk upload
+            let bulk_tweets = [];
+            tweets.forEach((t) => {
+                if (true || t.loc_lat && t.loc_lon) {
+                    console.log(t);
+                    bulk_tweets.push(
+                        { index: {_index: config.es.index, _type: config.es.doc_type} },
+                        t
+                    );
+                }
+            });
+
+            if (bulk_tweets.length > 0) {
+                elastic_client.bulk({
+                    maxRetries: 5,
+                    index: config.es.index,
+                    type: config.es.doc_type,
+                    body: bulk_tweets
+                }, function(err,resp,status) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        console.log('this many docs added - ',resp.items.length);  
+                    }
+                    upload2ES();
+                });
+            } else {
+                upload2ES();
+            }
+
         } else {
-            setTimeout(getMessages, 180000);
+            setTimeout(upload2ES, 180000);
         }
     });    
 }
@@ -188,7 +235,7 @@ let keepSocketAlive = () => {
 };
 
 setTimeout(getMessages, 5000);
-setTimeout(upload2ES, 28000);
+// setTimeout(upload2ES, 10000);
 setTimeout(keepSocketAlive, 1000);
 let server = app.listen(app.get('port'), () => {
     console.log('App is listening on port ', server.address().port);
