@@ -23,6 +23,9 @@
                 socket.on('raw_tweet', function (data) {
                     console.log('client side tweet', data.body);
                 });
+                socket.on('polling', function(empty) {
+                    console.log('polling');
+                });
                 // Listens for a success response from the server to 
                 // say the connection was successful.
                 socket.on("server connected", function(r) {

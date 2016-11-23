@@ -93,7 +93,7 @@ let ml = new MonkeyLearn(config.monkey_learn_key);
 
 function getMessages() {
     let receiveMessageParams = {
-        QueueUrl: config.QueueUrl,
+        QueueUrl: config.QueueUrlGeo,
         MaxNumberOfMessages: 5
     };
     sqs.receiveMessage(receiveMessageParams, (err, data) => {
@@ -122,20 +122,48 @@ function getMessages() {
                 tweet = _.get(tweet, 'Message');
 
                 var deleteMessageParams = {
-                    QueueUrl: config.QueueUrl,
+                    QueueUrl: config.QueueUrlGeo,
                     ReceiptHandle: data.Messages[i].ReceiptHandle
                 };
 
                 sqs.deleteMessage(deleteMessageParams, (err, data) => {});
             }
         } else {
-            setTimeout(getMessages, 15);
+            setTimeout(getMessages, 300000);
         }
     });
 }
 
 function upload2ES() {
-    //TODO: ES bulk upload
+    let receiveMessageParams = {
+        QueueUrl: config.QueueUrlSentiment,
+        MaxNumberOfMessages: 5
+    };
+    sqs.receiveMessage(receiveMessageParams, (err, data) => {
+        console.log('upload2ES repeat');
+        if (data && data.Messages && data.Messages.length > 0) {
+            var tweets = data.Messages.map((msg) => {
+                var tweet = JSON.parse(_.get(msg, 'Body'));
+                tweet = _.get(tweet, 'Message');
+                return JSON.parse(tweet);
+            });
+
+            //ES bulk upload
+            for (var i=0; i < data.Messages.length; i++) {
+                var tweet = JSON.parse(_.get(data, 'Messages['+i+'].Body'));
+                tweet = _.get(tweet, 'Message');
+
+                var deleteMessageParams = {
+                    QueueUrl: config.QueueUrlSentiment,
+                    ReceiptHandle: data.Messages[i].ReceiptHandle
+                };
+
+                sqs.deleteMessage(deleteMessageParams, (err, data) => {});
+            }
+        } else {
+            setTimeout(getMessages, 180000);
+        }
+    });    
 }
 
 //pass the tweet texts as an array
@@ -154,8 +182,14 @@ let calcSentiment = (tweets) => {
     });
 }
 
-setTimeout(getMessages, 5);
-setTimeout(upload2ES, 28);
+let keepSocketAlive = () => {
+    io.emit('polling', {});
+    setTimeout(keepSocketAlive, 5000);
+};
+
+setTimeout(getMessages, 5000);
+setTimeout(upload2ES, 28000);
+setTimeout(keepSocketAlive, 1000);
 let server = app.listen(app.get('port'), () => {
     console.log('App is listening on port ', server.address().port);
 })
