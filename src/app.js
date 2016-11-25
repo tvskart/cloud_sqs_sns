@@ -63,8 +63,30 @@ let runStream = () => {
 };
 
 app.get('/start', (req, res) => {
-    runStream();
-    res.render('index', {});
+    // runStream();
+    elastic_client.search({
+        index: config.es.index,
+        type: config.es.doc_type,
+        body: {
+            query: {
+                match_all: {}    
+            },
+            size: 200
+        }
+    },function (error, response, status) {
+        if (error){
+            console.log("search error: "+error);
+        }
+        else {
+            console.log('query worked');
+            let tweets = [];
+            response.hits.hits.forEach(function(hit){
+                tweets.push(hit._source);
+            });
+            console.log(tweets.length);
+            res.render('index', {tweets});
+        }
+    });
 });
 
 app.get('/search', (req, res) => {
@@ -76,13 +98,12 @@ app.get('/search', (req, res) => {
     } else {
         search_query.term = { "body" : search_term };
     }
-    console.log('search query', search_query);
     elastic_client.search({
         index: config.es.index,
         type: config.es.doc_type,
         body: {
             query: search_query,
-            size: 500
+            size: 2000
         }
     },function (error, response, status) {
         if (error){
@@ -90,9 +111,6 @@ app.get('/search', (req, res) => {
         }
         else {
             let tweets = [];
-            console.log("--- Response ---");
-            console.log(response);
-            console.log("--- Hits ---");
             response.hits.hits.forEach(function(hit){
                 tweets.push(hit._source);
             });
@@ -271,7 +289,7 @@ let keepSocketAlive = () => {
     setTimeout(keepSocketAlive, 5000);
 };
 
-setTimeout(getMessages, 5000);
+// setTimeout(getMessages, 5000);
 // setTimeout(upload2ES, 10000);
 setTimeout(keepSocketAlive, 1000);
 let server = app.listen(app.get('port'), () => {

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Assignment 2 - Map with Markers (Sentiment Tweets)</title>
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<style>
+html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+#map {
+      height: 100%;
+      width: 1023px;
+    }
+    h1 {
+    text-align: center;
+    }
+    #list_tweets {
+      overflow-y: scroll;
+      height: 600px;
+    }
+
+    #list_tweets li.negative {
+        background-color: salmon;
+    }
+    #list_tweets li.positive {
+        background-color: greenyellow;
+    }    
+</style>
+
+  </head>
+  <body>
+    <h1>Tweet Map V2 - Sentiment</h1>
+    <div class="col-xs-2">
+    <p> <b>Filter based on Keyword</b></p>
+    <select id =keys>
+      <option value="" selected="selected">No Filter</option>
+      <option value="hillary">Hillary</option>
+      <option value="trump">Trump</option>
+      <option value="air">Air</option>
+      <option value="son">Son</option>
+    </select>
+    <ul id="list_tweets">
+    </ul>
+      </div>
+
+    <div class="col-xs-10" id="map">
+    </div>
+    
+  <script>
+    var map;
+    var markers=[];
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 0, lng: 0},
+          draggable: false,
+          zoom: 2,
+          minZoom:2 
+        });
+        map.addListener('zoom_changed', function() {
+         if(map.getZoom()>2){
+          map.draggable=true;
+         }else{
+          map.draggable=false;
+         }  
+       
+       });
+       var Tweets = <%- JSON.stringify(tweets) %>;
+       renderTweets(Tweets);
+    }
+    $('#keys').change(function(){
+        var keyword=$(this).find("option:selected").attr('value')
+        $.ajax({
+          url: "/search",
+          data:{search_term:keyword},
+          success: function(result){
+          //Empty Map or Filter out from all
+            for (var i = 0; i < markers.length; i++) {
+              markers[i].setMap(null);
+            }
+            markers = [];
+            //Set Markers
+            var Tweets = result;
+            renderTweets(Tweets);
+          }});
+      });
+    function renderTweets(Tweets){
+      var results= Tweets;
+      $("#list_tweets").empty();
+      var images = {
+        'positive': 'http://medspa.neuroninc.com/theme/images/green-dot.png',
+        'negative': 'http://medspa.neuroninc.com/theme/images/red-dot.png',
+        'neutral': 'http://medspa.neuroninc.com/theme/images/chat-icon.png'
+      };
+       for (var i = 0; i < results.length; i++) {
+          var tweet=results[i];
+          var tweet_status=tweet.body;
+          var sentiment = tweet.sentiment || 'neutral';
+          var coordinates={}
+          if(!tweet.loc_lat && !tweet.loc_lon){
+            var address = tweet.loc_name;
+
+            var geocoder = new google.maps.Geocoder();
+            var geoOptions = {
+              address: address
+            };
+            geocoder.geocode(geoOptions, callback(tweet_status));
+          }
+          else{
+            coordinates["lat"]=Number(tweet.loc_lat);
+            coordinates["lng"]=Number(tweet.loc_lon);
+            markers.push(new google.maps.Marker({
+              position: coordinates,
+              title:tweet_status,
+              animation: google.maps.Animation.DROP,
+              map: map,
+              icon: images[sentiment]
+            }));
+          }
+
+          //list of tweets.
+          $("#list_tweets").append("<li class='"+sentiment+"'>"+tweet_status+"</li>");
+       }
+    }
+    function callback(tweet_status) {
+        return function(results, status) {
+        if (status == google.maps.GeocoderStatus.OK) {
+            var marker=new google.maps.Marker({
+                position: results[0].geometry.location,
+                title:tweet_status,
+                map: map
+                });
+        markers.push(marker);
+        } else {
+            console.log("Geocode failed " + status);
+        }
+        };
+  }
+	</script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCazhbGl7iOujK4r0FmGgpJjOhTdpX48J0&callback=initMap"
+    async defer></script>
+	</body>
+</html>
