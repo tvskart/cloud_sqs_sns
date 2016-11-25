@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 let twit = new Twitter(config.twitter);
 let runStream = () => {
     console.log('stream running again');
-    twit.stream('statuses/filter', config.stream.words, function(s) {
+    twit.stream('statuses/filter', config.stream.location, function(s) {
         stream = s;
         stream.on('limit', function(limitMessage) {
             return console.log('stream limit - ', limitMessage);
