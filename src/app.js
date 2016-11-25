@@ -63,7 +63,7 @@ let runStream = () => {
 };
 
 app.get('/start', (req, res) => {
-    // runStream();
+    runStream();
     elastic_client.search({
         index: config.es.index,
         type: config.es.doc_type,

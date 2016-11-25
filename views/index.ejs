@@ -6,6 +6,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
 
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="../socket.io/socket.io.js"></script>    
 <style>
 html, body {
         height: 100%;
@@ -29,13 +30,24 @@ html, body {
     }
     #list_tweets li.positive {
         background-color: greenyellow;
-    }    
+    } 
+    p#ticker-tweet {
+        height: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    p#ticker-tweet.geo-enabled {
+        background-color: black;
+        color: white;
+    }
 </style>
 
   </head>
   <body>
     <h1>Tweet Map V2 - Sentiment</h1>
     <div class="col-xs-2">
+    <p> <b>Ticker Tweet</b></p>
+    <p id="ticker-tweet"></p>
     <p> <b>Filter based on Keyword</b></p>
     <select id =keys>
       <option value="" selected="selected">No Filter</option>
@@ -50,7 +62,44 @@ html, body {
 
     <div class="col-xs-10" id="map">
     </div>
-    
+
+    <script type="text/javascript">
+        console.log('client side start');
+        function initialize() {
+            if(io !== undefined) {
+                // Storage for WebSocket connections
+                var socket = io.connect('/');
+
+                // This listens on the "tweet" channel and data is 
+                // received everytime a new tweet is receieved.
+                socket.on('new_tweet', function (data) {
+                    console.log('location based tweeet', data);
+                    renderTweets([data]);
+                });
+                socket.on('raw_tweet', function (data) {
+                    console.log('client side tweet', data.body);
+                    //renderTweets([data]);
+                    $('#ticker-tweet').html(data.body);
+                    if (data.loc_lat && data.loc_lon) {
+                        $('#ticker-tweet').addClass('geo-enabled');
+                    } else {
+                        $('#ticker-tweet').removeClass('geo-enabled');
+                    }
+                });
+                socket.on('polling', function(empty) {
+                    console.log('polling');
+                });
+                // Listens for a success response from the server to 
+                // say the connection was successful.
+                socket.on("server connected", function(r) {
+                    //Now that we are connected to the server let's tell 
+                    //the server we are ready to start receiving tweets.
+                    console.log('client server connection made');
+                });
+            }
+        }
+        initialize();
+    </script>    
   <script>
     var map;
     var markers=[];
@@ -85,12 +134,12 @@ html, body {
             markers = [];
             //Set Markers
             var Tweets = result;
+            $("#list_tweets").empty();
             renderTweets(Tweets);
           }});
       });
     function renderTweets(Tweets){
       var results= Tweets;
-      $("#list_tweets").empty();
       var images = {
         'positive': 'http://medspa.neuroninc.com/theme/images/green-dot.png',
         'negative': 'http://medspa.neuroninc.com/theme/images/red-dot.png',
@@ -102,13 +151,14 @@ html, body {
           var sentiment = tweet.sentiment || 'neutral';
           var coordinates={}
           if(!tweet.loc_lat && !tweet.loc_lon){
-            var address = tweet.loc_name;
+            console.log('tough luck, no geo');
+            //var address = tweet.loc_name;
 
-            var geocoder = new google.maps.Geocoder();
-            var geoOptions = {
-              address: address
-            };
-            geocoder.geocode(geoOptions, callback(tweet_status));
+            //var geocoder = new google.maps.Geocoder();
+            //var geoOptions = {
+            //  address: address
+            //};
+            //geocoder.geocode(geoOptions, callback(tweet_status));
           }
           else{
             coordinates["lat"]=Number(tweet.loc_lat);
@@ -120,10 +170,9 @@ html, body {
               map: map,
               icon: images[sentiment]
             }));
+            //list of tweets.
+          $("#list_tweets").prepend("<li class='"+sentiment+"'>"+tweet_status+"</li>");            
           }
-
-          //list of tweets.
-          $("#list_tweets").append("<li class='"+sentiment+"'>"+tweet_status+"</li>");
        }
     }
     function callback(tweet_status) {
