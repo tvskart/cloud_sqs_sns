@@ -4,12 +4,14 @@ let path = require('path');
 let Twitter = require('twitter');
 let config = require('./config');
 let _ = require('lodash');
+let ejs =  require('ejs');
+
 // let async = require('async'); TODO: USE IT, LEARN IT!
 
 let app = express();
 const port = 8080;
 app.set('port', process.env.PORT || port);
-app.set('view engine', 'hbs');
+app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'))
 app.use(bodyParser.urlencoded({extended: false}));
 let twit = new Twitter(config.twitter);
@@ -64,6 +66,41 @@ app.get('/start', (req, res) => {
     runStream();
     res.render('index', {});
 });
+
+app.get('/search', (req, res) => {
+    let search_term = req.query.search_term || '';
+    let search_query = {};
+    search_term = search_term.toLowerCase();
+    if (search_term === '') {
+        search_query.match_all = {}; //all tweets
+    } else {
+        search_query.term = { "body" : search_term };
+    }
+    console.log('search query', search_query);
+    elastic_client.search({
+        index: config.es.index,
+        type: config.es.doc_type,
+        body: {
+            query: search_query,
+            size: 500
+        }
+    },function (error, response, status) {
+        if (error){
+            console.log("search error: "+error);
+        }
+        else {
+            let tweets = [];
+            console.log("--- Response ---");
+            console.log(response);
+            console.log("--- Hits ---");
+            response.hits.hits.forEach(function(hit){
+                tweets.push(hit._source);
+            });
+            res.json(tweets);
+        }
+    });
+});
+
 let aws = require('aws-sdk');
 aws.config.update(config.aws);
 let sns = new aws.SNS();
