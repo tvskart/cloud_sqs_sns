@@ -63,7 +63,8 @@ let runStream = () => {
 };
 
 app.get('/start', (req, res) => {
-    runStream();
+    // runStream();
+    getMessages();
     elastic_client.search({
         index: config.es.index,
         type: config.es.doc_type,
@@ -134,7 +135,7 @@ let snsSubscribeNewTweet = (tweet) => {
     io.emit('new_tweet', tweet);
 }
 let snsSubscribeSentimentTweet = (tweet) => {
-    console.log(tweet);
+    // console.log(tweet);
     let publishParams = {
         TopicArn : config.TopicArnSentiment,
         Message: JSON.stringify(tweet)
@@ -176,9 +177,9 @@ function getMessages() {
                 return JSON.parse(tweet);
             });
             //TODO: IMportant. fix async issue i.e. loop through tweets async calls ------
-
             calcSentiment(tweets).then((sentiments) => {
                 //SNS
+                console.log(sentiments);
                 sentiment_tweets = _.zipWith(tweets, sentiments, function(t, s) {
                     return _.merge(t, {'sentiment': s});
                 });
@@ -186,6 +187,8 @@ function getMessages() {
                     snsSubscribeSentimentTweet(st);
                 });
                 getMessages(); //repeat
+            }).catch((err) => {
+                console.log(err);
             });
 
             for (var i=0; i < data.Messages.length; i++) {
@@ -274,6 +277,7 @@ let calcSentiment = (tweets) => {
         let tweet_texts = tweets.map((t) => {
             return _.get(t, 'body');
         });
+        console.log(tweet_texts);
         let sentiment = ml.classifiers.classify(config.ml_module_id, tweet_texts, true);
         sentiment.then((res) => {
             var results = res.result.map((r) => {
@@ -289,7 +293,7 @@ let keepSocketAlive = () => {
     setTimeout(keepSocketAlive, 5000);
 };
 
-// setTimeout(getMessages, 5000);
+// setTimeout(getMessages, 1000);
 // setTimeout(upload2ES, 10000);
 setTimeout(keepSocketAlive, 1000);
 let server = app.listen(app.get('port'), () => {
