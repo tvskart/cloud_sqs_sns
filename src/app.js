@@ -64,7 +64,7 @@ let runStream = () => {
 
 app.get('/start', (req, res) => {
     // runStream();
-    // getMessages();
+    getMessages();
     elastic_client.search({
         index: config.es.index,
         type: config.es.doc_type,
@@ -166,7 +166,7 @@ const elastic_client = new elasticsearch.Client({
 function getMessages() {
     let receiveMessageParams = {
         QueueUrl: config.QueueUrlGeo,
-        MaxNumberOfMessages: 5
+        MaxNumberOfMessages: 1
     };
     sqs.receiveMessage(receiveMessageParams, (err, data) => {
         console.log('getmessages repeat');
@@ -188,7 +188,7 @@ function getMessages() {
                 });
                 getMessages(); //repeat
             }).catch((err) => {
-                console.log(err);
+                getMessages(); //skip and repeat
             });
 
             for (var i=0; i < data.Messages.length; i++) {
@@ -268,7 +268,7 @@ function upload2ES() {
         } else {
             setTimeout(upload2ES, 180000);
         }
-    });    
+    });
 }
 
 //pass the tweet texts as an array
@@ -284,6 +284,9 @@ let calcSentiment = (tweets) => {
                 return (_.get(r, '[0].label'));
             });
             resolve(results);
+        }).catch((err) => {
+            console.log(err);
+            reject(err);
         });
     });
 }

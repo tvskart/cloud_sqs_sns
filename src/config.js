@@ -16,7 +16,8 @@ module.exports = {
     TopicArnSentiment: "arn:aws:sns:us-east-1:892410376055:sentiment_tweets",
     QueueUrlGeo: "https://sqs.us-east-1.amazonaws.com/892410376055/geo_tweets_queue",
     QueueUrlSentiment: "https://sqs.us-east-1.amazonaws.com/892410376055/sentiment_tweets",
-    monkey_learn_key: "0f0a835d95c22c050a859454e4a8ce0f1aef6b3b",
+    //monkey_learn_key: "0f0a835d95c22c050a859454e4a8ce0f1aef6b3b",
+    monkey_learn_key: "4622f202b72472a88df5bcb04da709256ab50261",
     ml_module_id: "cl_qkjxv9Ly",
     aws: {
         'region': 'us-east-1'
