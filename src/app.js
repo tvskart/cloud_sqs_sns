@@ -9,7 +9,7 @@ let ejs =  require('ejs');
 // let async = require('async'); TODO: USE IT, LEARN IT!
 
 let app = express();
-const port = 8080;
+const port = 3000;
 app.set('port', process.env.PORT || port);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'))
@@ -63,8 +63,10 @@ let runStream = () => {
 };
 
 app.get('/start', (req, res) => {
-    // runStream();
-    getMessages();
+    setTimeout(runStream, 5000);
+    setTimeout(getMessages, 20000);
+    setTimeout(upload2ES, 50000);
+    setTimeout(keepSocketAlive, 1000);    
     elastic_client.search({
         index: config.es.index,
         type: config.es.doc_type,
@@ -132,7 +134,7 @@ let snsSubscribeNewTweet = (tweet) => {
     sns.publish(publishParams, (err, data) => {
         console.log(err, data);
     });
-    io.emit('new_tweet', tweet);
+    // io.emit('new_tweet', tweet);
 }
 let snsSubscribeSentimentTweet = (tweet) => {
     // console.log(tweet);
@@ -142,6 +144,7 @@ let snsSubscribeSentimentTweet = (tweet) => {
     };
 
     sns.publish(publishParams, (err, data) => {});
+    io.emit('new_tweet', tweet);
 }
 let sqs = new aws.SQS();
 let MonkeyLearn = require('monkeylearn');
@@ -203,7 +206,7 @@ function getMessages() {
                 sqs.deleteMessage(deleteMessageParams, (err, data) => {});
             }
         } else {
-            setTimeout(getMessages, 300000);
+            setTimeout(getMessages, 10000);
         }
     });
 }
@@ -266,7 +269,7 @@ function upload2ES() {
             }
 
         } else {
-            setTimeout(upload2ES, 180000);
+            setTimeout(upload2ES, 50000);
         }
     });
 }
@@ -293,12 +296,9 @@ let calcSentiment = (tweets) => {
 
 let keepSocketAlive = () => {
     io.emit('polling', {});
-    setTimeout(keepSocketAlive, 5000);
+    setTimeout(keepSocketAlive, 3000);
 };
 
-// setTimeout(getMessages, 1000);
-// setTimeout(upload2ES, 10000);
-setTimeout(keepSocketAlive, 1000);
 let server = app.listen(app.get('port'), () => {
     console.log('App is listening on port ', server.address().port);
 })
