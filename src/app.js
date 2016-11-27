@@ -9,7 +9,7 @@ let ejs =  require('ejs');
 // let async = require('async'); TODO: USE IT, LEARN IT!
 
 let app = express();
-const port = 3000;
+const port = 8080;
 app.set('port', process.env.PORT || port);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'))
